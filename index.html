@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discrete Mathematics Exam Analyzer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Enhanced Custom Color Palette for Attractiveness */
+        :root {
+            --primary: #363062; /* Dark Blue-Violet for Headers */
+            --secondary: #435585; /* Medium Blue for Accents */
+            --tertiary: #818FB4; /* Light Blue for Charts */
+            --background: #f9fafb; /* Softer Off-White Background */
+            --accent: #F99417; /* Orange Accent for Highlights */
+            --success: #22c55e; /* Green for Important */
+            --info: #3b82f6; /* Blue for Common */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: #4a4a4a;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            --primary: #e0e0e0;
+            --secondary: #a5b4fc;
+            --tertiary: #6366f1;
+            --background: #1f2937;
+            --accent: #fb923c;
+            --success: #4ade80;
+            --info: #60a5fa;
+            color: #e5e7eb;
+        }
+
+        .bg-white.dark-mode {
+            background-color: #374151;
+            border-color: #4b5563;
+        }
+
+        .text-gray-700.dark-mode {
+            color: #d1d5db;
+        }
+
+        .text-gray-600.dark-mode {
+            color: #9ca3af;
+        }
+
+        .text-gray-500.dark-mode {
+            color: #9ca3af;
+        }
+
+        /* Responsive Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* Active Filter Buttons */
+        .active-filter {
+            background-color: var(--secondary) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            transform: scale(1.05);
+        }
+
+        /* Interactive Question Card with Animation */
+        .question-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .question-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        /* Filter Buttons with Hover Effects */
+        .filter-btn {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            white-space: nowrap;
+        }
+        .filter-btn:not(.active-filter):hover {
+            background-color: #e5e7eb;
+            transform: scale(1.05);
+        }
+
+        /* Gradient Header */
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            padding: 2rem;
+            border-radius: 1rem;
+            color: white;
+        }
+
+        /* Answer Section Styling */
+        .answer-section {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f3f4f6;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .answer-section.dark-mode {
+            background-color: #4b5563;
+            color: #d1d5db;
+        }
+
+        /* Search Bar Styling */
+        #search-input {
+            transition: all 0.3s ease;
+        }
+        #search-input:focus {
+            box-shadow: 0 0 0 3px rgba(67, 85, 133, 0.3);
+        }
+
+        /* Export Button */
+        #export-pdf {
+            transition: all 0.3s ease;
+        }
+        #export-pdf:hover {
+            transform: scale(1.05);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-10 max-w-7xl">
+        <!-- Dark Mode Toggle -->
+        <div class="flex justify-end mb-4">
+            <button id="dark-mode-toggle" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+        </div>
+
+        <header class="text-center mb-12 rounded-2xl shadow-xl">
+            <h1 class="text-4xl md:text-5xl font-extrabold">Discrete Mathematics Exam Analyzer</h1>
+            <p class="mt-3 text-lg max-w-4xl mx-auto">Interactive dashboard with question patterns, topics, marks, answers, search, sorting, and more from 2023-2025 exams for CCE-2307.</p>
+        </header>
+
+        <main>
+            <!-- Key Metrics Section with Animation -->
+            <section id="key-metrics" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 text-center animate-fadeIn" style="animation-delay: 0.1s;">
+                    <h3 class="text-lg font-medium text-gray-500">Total Questions Analyzed</h3>
+                    <p id="total-questions" class="text-5xl font-extrabold text-[--secondary] mt-2">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 text-center animate-fadeIn" style="animation-delay: 0.2s;">
+                    <h3 class="text-lg font-medium text-gray-500">Frequently Repeated ("Common")</h3>
+                    <p id="common-questions" class="text-5xl font-extrabold text-[--secondary] mt-2">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 text-center animate-fadeIn" style="animation-delay: 0.3s;">
+                    <h3 class="text-lg font-medium text-gray-500">High-Potential ("Important")</h3>
+                    <p id="important-topics" class="text-5xl font-extrabold text-[--secondary] mt-2">0</p>
+                </div>
+            </section>
+
+            <!-- New Feature: Average Marks Chart -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                <!-- Topic Frequency Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 animate-fadeIn" style="animation-delay: 0.4s;">
+                    <h2 class="text-2xl font-bold text-center mb-4 text-[--primary]">Question Count by Topic</h2>
+                    <p class="text-center text-gray-600 mb-4 text-sm">Topics with highest question frequency.</p>
+                    <div class="chart-container">
+                        <canvas id="topicFrequencyChart"></canvas>
+                    </div>
+                </div>
+                <!-- Mark Distribution Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 animate-fadeIn" style="animation-delay: 0.5s;">
+                    <h2 class="text-2xl font-bold text-center mb-4 text-[--primary]">Mark Weightage Distribution</h2>
+                    <p class="text-center text-gray-600 mb-4 text-sm">Percentage of marks per topic.</p>
+                    <div class="chart-container">
+                        <canvas id="marksDistributionChart"></canvas>
+                    </div>
+                </div>
+                <!-- New Average Marks Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 animate-fadeIn" style="animation-delay: 0.6s;">
+                    <h2 class="text-2xl font-bold text-center mb-4 text-[--primary]">Average Marks per Topic</h2>
+                    <p class="text-center text-gray-600 mb-4 text-sm">Average marks assigned to questions in each topic.</p>
+                    <div class="chart-container">
+                        <canvas id="averageMarksChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter, Search, Sort, and Export Section -->
+            <section class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 mb-12 animate-fadeIn" style="animation-delay: 0.7s;">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[--primary]">Filtered Question Explorer</h2>
+                
+                <!-- Search Bar -->
+                <div class="mb-6 flex justify-center">
+                    <input id="search-input" type="text" placeholder="Search questions by keyword..." class="w-full max-w-md p-3 border border-gray-300 rounded-full focus:outline-none focus:border-[--secondary]">
+                </div>
+
+                <!-- Filters -->
+                <div id="filters" class="flex flex-col md:flex-row flex-wrap items-center justify-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                    <!-- Topic Filters -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button data-filter="All" class="filter-btn topic-filter active-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">All Topics</button>
+                        <button data-filter="Sets & Operations" class="filter-btn topic-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">Sets & Ops</button>
+                        <button data-filter="Functions & Relations" class="filter-btn topic-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">Functions</button>
+                        <button data-filter="Logic & Quantifiers" class="filter-btn topic-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">Logic</button>
+                    </div>
+                    
+                    <!-- Status Filters -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button data-filter="All" class="filter-btn status-filter active-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">All Statuses</button>
+                        <button data-filter="Common" class="filter-btn status-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">Common</button>
+                        <button data-filter="Important" class="filter-btn status-filter px-4 py-2 bg-gray-200 text-gray-700 rounded-full font-semibold">Important</button>
+                    </div>
+                    
+                    <!-- Semester Dropdown -->
+                    <div>
+                        <select id="semester-filter" class="filter-btn semester-filter p-2 border border-gray-300 rounded-full font-semibold bg-white cursor-pointer hover:bg-gray-100">
+                            <option value="All">All Semesters</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort Dropdown -->
+                    <div>
+                        <select id="sort-filter" class="filter-btn p-2 border border-gray-300 rounded-full font-semibold bg-white cursor-pointer hover:bg-gray-100">
+                            <option value="id-asc">Sort by ID (Asc)</option>
+                            <option value="id-desc">Sort by ID (Desc)</option>
+                            <option value="marks-asc">Sort by Marks (Low to High)</option>
+                            <option value="marks-desc">Sort by Marks (High to Low)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Export Button -->
+                <div class="flex justify-center mb-6">
+                    <button id="export-pdf" class="px-6 py-3 bg-[--accent] text-white rounded-full font-semibold hover:bg-orange-600">
+                        <i class="fas fa-file-pdf mr-2"></i> Export to PDF
+                    </button>
+                </div>
+                
+                <!-- Question List -->
+                <div id="question-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards injected here -->
+                </div>
+                
+                <p id="no-results" class="text-center text-gray-500 py-10 text-lg hidden">No questions match the criteria. Try adjusting filters or search.</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- Include jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        // Enhanced Data with Simple, Short Answers
+        const questionData = [
+            { id: 1.1, topic: "Sets & Operations", text: "Discuss about different types of sets with examples.", marks: 6, semester: "Spring 2025", status: "Important", answer: "Types: Empty ({}), Finite ({1,2,3}), Infinite (natural numbers), Singleton ({a}), Universal (all in context), Power set (all subsets of a set). Easy: Remember as EFISUP." },
+            { id: 1.2, topic: "Sets & Operations", text: "Find the sets and their bit strings. Let U = {0,1,...,9}, A = {2,4,6,8}, B = {1,3,5,7,9}, C = {2,3,5,7}. Find: i) A', ii) B ∪ C, iii) (A ∪ B) ∩ C, iv) (A ∩ B ∩ C).", marks: 4, semester: "Spring 2025", status: "Common", answer: "i) A' = {0,1,3,5,7,9}, bit: 1101010101\nii) B∪C = {1,2,3,5,7,9}, bit: 0101110101\niii) (A∪B)∩C = {2,3,5,7}, bit: 0011010100\niv) A∩B∩C = {}, bit: 0000000000\nTip: Bit 1 if element in set (pos 0-9)." },
+            { id: 1.3, topic: "Sets & Operations", text: "Implement Distributive Laws on the following sets: A = {1,2,3}, B = {3,4,5}, C = {3,5,6}.", marks: 6, semester: "Spring 2024", status: "", answer: "A∪(B∩C) = {1,2,3,5} = (A∪B)∩(A∪C)\nA∩(B∪C) = {3} = (A∩B)∪(A∩C)\nKey: Union distributes over intersection, and vice versa." },
+            { id: 1.4, topic: "Sets & Operations", text: "Prove that: i) A ∪ B = B ∪ A for A = {1,2} & B = {2,3,4}, ii) A ∩ B = B ∩ A for A = {1,2,3} & B = {2,5,6,7}.", marks: 4, semester: "Spring 2024", status: "", answer: "i) A∪B = {1,2,3,4} = B∪A (commutative).\nii) A∩B = {2} = B∩A (commutative).\nRemember: Order doesn't matter in union/intersection." },
+            { id: 1.5, topic: "Sets & Operations", text: "**Prove De Morgan's Laws:** i) (A ∪ B)' = A' ∩ B' and ii) (A ∩ B)' = A' ∪ B' for U = {1,...,9}, A = {2,4,6,8}, B = {2,3,5,7}.", marks: 6, semester: "Autumn 2023", status: "Common", answer: "i) (A∪B)' = {1,9} = A'∩B' ({1,3,5,7,9} ∩ {1,4,6,8,9})\nii) (A∩B)' = {1,3,4,5,6,7,8,9} = A'∪B' ({1,3,5,7,9} ∪ {1,4,6,8,9})\nTip: Complement flips union to intersection." },
+            { id: 1.6, topic: "Sets & Operations", text: "Find the sets and bit strings of O ∪ P, U - P, E' and E ∪ (O ∪ P) for U = {0,1,...,9}, E = {2,4,6,8}, O = {1,3,5,7,9}, P = {2,3,5,7}.", marks: 4, semester: "Autumn 2023", status: "Common", answer: "O∪P = {1,2,3,5,7,9}, bit: 0101110101\nU-P = {0,1,4,6,8,9}, bit: 1100101010\nE' = {0,1,3,5,7,9}, bit: 1101010101\nE∪(O∪P) = {1,2,3,4,5,6,7,8,9}, bit: 0111111111\nTip: Use positions 0-9 for bits." },
+            { id: 1.7, topic: "Sets & Operations", text: "Define Discrete Mathematics. Write down some applications of it.", marks: 3, semester: "Spring 2023", status: "", answer: "Discrete Math: Study of countable structures.\nApps: Algorithms, networks, cryptography, databases.\nEasy: Think discrete = countable, like integers vs. continuous." },
+            { id: 1.8, topic: "Sets & Operations", text: "Use set builder notation to describe the given sets: i) A = {1,4,9,16,25,...}, ii) B = {2,4,8,16,32}.", marks: 3, semester: "Spring 2023", status: "", answer: "i) A = {x² | x ∈ ℕ, x ≥ 1}\nii) B = {2^n | n ∈ ℕ, 1 ≤ n ≤ 5}\nTip: {property | condition}." },
+            { id: 1.9, topic: "Sets & Operations", text: "**Prove De Morgan's Laws:** i) (A ∪ B)' = A' ∩ B' ii) (A ∩ B)' = A' ∪ B' for U = {1,...,9}, A = {2,4,6,8}, B = {2,3,5,7}.", marks: 4, semester: "Spring 2023", status: "Common", answer: "Same as 1.5: i) {1,9} both sides.\nii) {1,3,4,5,6,7,8,9} both sides.\nMnemonic: 'Outside' flips ∪ to ∩." },
+            { id: 2.1, topic: "Functions & Relations", text: "Describe different types of relations with examples.", marks: 5, semester: "Spring 2025", status: "Important", answer: "Types: Reflexive (every element relates to self, e.g., =), Symmetric (if a~b then b~a, e.g., siblings), Transitive (a~b, b~c => a~c, e.g., <), Equivalence (all three).\nEasy: RST for properties." },
+            { id: 2.2, topic: "Functions & Relations", text: "Find out if the function f: R ↔ R, f(x) = 2x² - 5x + 1 is a one-to-one function?", marks: 5, semester: "Spring 2025", status: "", answer: "Not one-to-one: f(1) = 2-5+1=-2, f(2)=8-10+1=-1, but quadratic opens up, repeats values.\nTest: Assume f(a)=f(b) ⇒ a=b? No." },
+            { id: 2.3, topic: "Functions & Relations", text: "Which one is a one-one into function? i) f = {(1,a),(2,b),(3,c),(4,b)} ii) f = {(1,a),(2,b),(3,d)}", marks: 5, semester: "Spring 2025", status: "", answer: "ii) is one-one into: Unique images, not all codomain covered.\ni) Not one-one: b repeated.\nKey: One-one = injective, into = not surjective." },
+            { id: 2.4, topic: "Functions & Relations", text: "Justify whether these two functions are one-one-onto or not: f = {(1,a), (2, c), (3, b), (4, d)}, g = {(1,a), (2, b), (3, b), (4.d)}.", marks: 4, semester: "Spring 2024", status: "Important", answer: "f: One-one-onto (bijective: unique, covers all).\ng: Not one-one (b repeated), not onto (missing c,d? Assume codomain {a,b,c,d}).\nTip: Check unique images and full coverage." },
+            { id: 2.5, topic: "Functions & Relations", text: "Given the sets A={1, 2, 3} and B={a, b, c, d}, classify whether the following relations are injective functions: f = {(1, a) (2, d) (3, b)}, g = {(1, a) (2, a) (3, d)}, h = {(1, a) (1, b) (2, d) (3, c)}, I = {(1, a) (2, b)}.", marks: 6, semester: "Spring 2024", status: "Common", answer: "f: Injective (unique images).\ng: Not (a repeated).\nh: Not function (1 maps to two).\ni: Injective but partial.\nKey: Function: one image per domain; Injective: unique images." },
+            { id: 2.6, topic: "Functions & Relations", text: "Define injective, surjective, bijective and one-one into functions.", marks: 4, semester: "Autumn 2023", status: "Common", answer: "Injective: Unique images (one-to-one).\nSurjective: Covers all codomain (onto).\nBijective: Both.\nOne-one into: Injective but not surjective.\nMnemonic: In-Sur-Bi-OneInto." },
+            { id: 2.7, topic: "Functions & Relations", text: "Given the sets A={1, 2, 3} and B={a, b, c, d}, classify whether the following relations are injective functions: f = {(1, a) (2, d) (3, b)}, g = {(1, a) (2, a) (3, d)}, h = {(1, a) (1, b) (2, d) (3, c)}, I = {(1, a) (2, b)}.", marks: 6, semester: "Autumn 2023", status: "Common", answer: "Same as 2.5: f yes, g no, h not function, i yes (partial)." },
+            { id: 2.8, topic: "Functions & Relations", text: "Define Functions. Explain different types of functions with examples.", marks: 6, semester: "Spring 2023", status: "Common", answer: "Function: Maps each domain to one codomain.\nTypes: Injective (e.g., f(x)=x+1), Surjective (e.g., f(x)=x mod 3 to {0,1,2}), Bijective (e.g., f(x)=x), Constant (e.g., f(x)=5).\nEasy: ISBC types." },
+            { id: 2.9, topic: "Functions & Relations", text: "Show that the function f: R → R, given by f(x) = 2x, is one-one and onto.", marks: 4, semester: "Spring 2023", status: "Important", answer: "One-one: f(a)=f(b) ⇒ 2a=2b ⇒ a=b.\nOnto: For any y, x=y/2 in R.\nTip: Linear, non-zero slope = bijective." },
+            { id: 3.1, topic: "Logic & Quantifiers", text: "Determine whether each of these conditional and biconditional statements is true or false. (Four specific examples given)", marks: 6, semester: "Spring 2025", status: "", answer: "Assume examples like: 1→2 true if 1 false or 2 true. Specifics: Evaluate p→q true unless p true q false; p↔q true if same truth.\nTip: → false only T→F; ↔ same as =." },
+            { id: 3.2, topic: "Logic & Quantifiers", text: "**Show logical equivalence of Contrapositive:** Show that conditional statement p → q and its contra positive (~q → ~p) are logically equivalent.", marks: 4, semester: "Spring 2025", status: "Common", answer: "Truth table: Both false only when p T, q F. Same in all cases.\nEasy: Contrapositive flips and negates." },
+            { id: 3.3, topic: "Logic & Quantifiers", text: "**Truth Values for Quantifiers:** Let P(x) be the statement x = x². What are the truth values of Universal and Existential quantifier for i) P(0), ii) P(2), iii) P(1), iv) P(-1).", marks: 5, semester: "Spring 2025", status: "Important", answer: "P(0):0=0 T; P(2):2=4 F; P(1):1=1 T; P(-1):-1=1 F.\n∀x P(x) F (not all); ∃x P(x) T (some like 0,1).\nDomain assumed reals." },
+            { id: 3.4, topic: "Logic & Quantifiers", text: "**Prove Contrapositive Equivalence (Tautology):** Prove that, the statement (p → q) ↔ (~q → ~p) is a tautology.", marks: 5, semester: "Spring 2024", status: "Common", answer: "Truth table: Always T (matches in all 4 cases).\nTip: Biconditional true when both same." },
+            { id: 3.5, topic: "Logic & Quantifiers", text: "Show the truth table for the derived connector **NAND**.", marks: 3, semester: "Spring 2024", status: "Important", answer: "NAND (p|q): TT F; TF T; FT T; FF T.\nEasy: Not (p and q)." },
+            { id: 3.6, topic: "Logic & Quantifiers", text: "Show that proposition (p ↔ q) ≅ (p → q) ∧ (q → p).", marks: 5, semester: "Spring 2024", status: "Important", answer: "Truth table: Both T when p=q, F otherwise.\nTip: ↔ means both directions." },
+            { id: 3.7, topic: "Logic & Quantifiers", text: "Show the truth table for the derived connector **XOR**.", marks: 3, semester: "Spring 2024", status: "Important", answer: "XOR (p⊕q): TT F; TF T; FT T; FF F.\nEasy: True if different." },
+            { id: 3.8, topic: "Logic & Quantifiers", text: "**Truth Value for Universal Quantifier:** Let, Q(x) be the statement 'x < 2'. Justify the truth values of ∀x Q(x) where the domain consists of all real numbers.", marks: 2, semester: "Spring 2024", status: "Common", answer: "∀x (x<2) F: Not all reals <2 (e.g., 3>2).\nTip: Universal false if any counterexample." },
+            { id: 3.9, topic: "Logic & Quantifiers", text: "**Show logical equivalence of Contrapositive:** Show that p → q and its contra positive ~q → ~p are logically equivalent.", marks: 5, semester: "Autumn 2023", status: "Common", answer: "Same as 3.2: Truth table identical." },
+            { id: 3.10, topic: "Logic & Quantifiers", text: "Prove that X ⊕ Y ≅ (X ∧ ¬Y) ∨ (¬X ∧ Y).", marks: 4, semester: "Autumn 2023", status: "Important", answer: "Truth table: Both T when different, F same.\nTip: XOR = exclusive or." },
+            { id: 3.11, topic: "Logic & Quantifiers", text: "Show that proposition q → p, and ~p → ~q is not equivalent to p → q.", marks: 4, semester: "Autumn 2023", status: "", answer: "q→p is converse; ~p→~q is inverse. Not same as p→q.\nTable: Differ when p F q T: p→q T, converse F." },
+            { id: 3.12, topic: "Logic & Quantifiers", text: "**Truth Value for Universal Quantifier:** Let, Q(x) be the statement 'x < 2'. Justify the truth values of ∀x Q(x) where the domain consists of all real numbers.", marks: 2, semester: "Autumn 2023", status: "Common", answer: "Same as 3.8: F, counterexamples exist." },
+            { id: 3.13, topic: "Logic & Quantifiers", text: "Define Propositional Logic. Convert the following sentence into logical expression: 'You can access the internet from campus only if you are a computer science major or you are not a freshman.'", marks: 5, semester: "Spring 2023", status: "Important", answer: "Prop Logic: Statements with connectives.\nExpression: I → (C ∨ ~F) (I=access, C=CS major, F=freshman).\nTip: 'Only if' = →." },
+            { id: 3.14, topic: "Logic & Quantifiers", text: "Define Predicate and Quantifiers. Convert the following statements into mathematical statements using predicate logic: 'Every person who is 18 years or older, is eligible to vote.'", marks: 5, semester: "Spring 2023", status: "Important", answer: "Predicate: Property P(x).\nQuantifiers: ∀ all, ∃ some.\n∀x (A(x) ≥ 18 → V(x)) (A=age, V=vote).\nTip: Implication for conditions." },
+            { id: 3.15, topic: "Logic & Quantifiers", text: "Define sets. Explain the representations of sets with examples.", marks: 4, semester: "Spring 2023", status: "Important", answer: "Sets: Collection of distinct objects.\nRep: Roster {1,2}, Builder {x | x even}, Venn diagrams.\nEasy: No duplicates, order irrelevant." },
+            { id: 3.16, topic: "Logic & Quantifiers", text: "Find the bit string for: i) A ∪ B, ii) A ∩ B, iii) U ∩ (A ∪ B) for U = {1,...,10}, A = {1,...,5}, B = {1,3,5,7,9}.", marks: 6, semester: "Spring 2023", status: "Common", answer: "Assume pos1-10.\ni) A∪B={1,2,3,4,5,7,9}, bit:1111101010\nii) A∩B={1,3,5}, bit:1010100000\niii) U∩(A∪B)=A∪B (subset), same as i.\nTip: 1 if in set." }
+        ];
+
+        let topicChart, marksChart, averageMarksChart;
+        let filters = { topic: 'All', status: 'All', semester: 'All', search: '', sort: 'id-asc' };
+
+        // Chart Colors
+        const chartColors = {
+            primary: '#435585',
+            secondary: '#818FB4',
+            tertiary: '#B4C5E4',
+            light: '#E6E6FA',
+            accent: '#F99417',
+            success: '#22c55e'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateSemesterFilter();
+            initializeCharts();
+            updateDashboard();
+
+            // Filter Listeners
+            document.querySelectorAll('.topic-filter').forEach(button => button.addEventListener('click', (e) => setFilter(e, 'topic')));
+            document.querySelectorAll('.status-filter').forEach(button => button.addEventListener('click', (e) => setFilter(e, 'status')));
+            document.getElementById('semester-filter').addEventListener('change', (e) => { filters.semester = e.target.value; updateDashboard(); });
+            document.getElementById('sort-filter').addEventListener('change', (e) => { filters.sort = e.target.value; updateDashboard(); });
+
+            // Search Listener
+            document.getElementById('search-input').addEventListener('input', (e) => { filters.search = e.target.value.toLowerCase(); updateDashboard(); });
+
+            // Dark Mode Toggle
+            document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const icon = document.querySelector('#dark-mode-toggle i');
+                icon.classList.toggle('fa-moon');
+                icon.classList.toggle('fa-sun');
+            });
+
+            // Export to PDF
+            document.getElementById('export-pdf').addEventListener('click', exportToPDF);
+        });
+
+        function setFilter(event, filterType) {
+            const button = event.target;
+            filters[filterType] = button.dataset.filter;
+            document.querySelectorAll(`.${filterType}-filter`).forEach(btn => btn.classList.remove('active-filter'));
+            button.classList.add('active-filter');
+            updateDashboard();
+        }
+
+        function populateSemesterFilter() {
+            const semesters = [...new Set(questionData.map(q => q.semester))].sort().reverse();
+            const select = document.getElementById('semester-filter');
+            semesters.forEach(semester => {
+                const option = document.createElement('option');
+                option.value = semester;
+                option.textContent = semester;
+                select.appendChild(option);
+            });
+        }
+
+        function filterAndSortData() {
+            let filtered = questionData.filter(q => 
+                (filters.topic === 'All' || q.topic === filters.topic) &&
+                (filters.status === 'All' || q.status === filters.status) &&
+                (filters.semester === 'All' || q.semester === filters.semester) &&
+                (q.text.toLowerCase().includes(filters.search) || q.answer.toLowerCase().includes(filters.search))
+            );
+
+            // Sort
+            if (filters.sort === 'id-asc') filtered.sort((a, b) => a.id - b.id);
+            else if (filters.sort === 'id-desc') filtered.sort((a, b) => b.id - a.id);
+            else if (filters.sort === 'marks-asc') filtered.sort((a, b) => a.marks - b.marks);
+            else if (filters.sort === 'marks-desc') filtered.sort((a, b) => b.marks - a.marks);
+
+            return filtered;
+        }
+
+        function updateDashboard() {
+            const filteredQuestions = filterAndSortData();
+            updateKeyMetrics();
+            updateCharts(filteredQuestions);
+            renderQuestionList(filteredQuestions);
+        }
+
+        function updateKeyMetrics() {
+            document.getElementById('total-questions').textContent = questionData.length;
+            document.getElementById('common-questions').textContent = questionData.filter(q => q.status === 'Common').length;
+            document.getElementById('important-topics').textContent = questionData.filter(q => q.status === 'Important').length;
+        }
+
+        function renderQuestionList(questions) {
+            const listElement = document.getElementById('question-list');
+            const noResultsElement = document.getElementById('no-results');
+            listElement.innerHTML = '';
+            if (questions.length === 0) {
+                noResultsElement.classList.remove('hidden');
+                return;
+            }
+            noResultsElement.classList.add('hidden');
+            questions.forEach(q => {
+                let statusBadge = '';
+                if (q.status === 'Common') {
+                    statusBadge = `<span class="absolute top-3 right-3 text-xs font-semibold px-3 py-1 bg-blue-100 text-blue-800 rounded-lg shadow-sm">Common</span>`;
+                } else if (q.status === 'Important') {
+                    statusBadge = `<span class="absolute top-3 right-3 text-xs font-semibold px-3 py-1 bg-green-100 text-green-800 rounded-lg shadow-sm">Important</span>`;
+                }
+                const card = `
+                    <div class="question-card bg-white border border-gray-200 rounded-xl p-5 flex flex-col relative h-full" onclick="toggleAnswer(this)">
+                        ${statusBadge}
+                        <div class="mb-3">
+                            <span class="text-xs font-bold text-gray-500 bg-gray-100 py-1 px-2 rounded">${q.semester}</span>
+                        </div>
+                        <p class="text-sm font-medium text-[--secondary] mb-2">${q.topic}</p>
+                        <p class="text-base text-gray-700 font-semibold flex-grow mb-4">${q.text}</p>
+                        <div class="flex justify-between items-end mt-auto pt-4 border-t border-gray-100">
+                            <span class="text-lg font-extrabold text-[--primary]">${q.marks} Marks</span>
+                            <i class="fas fa-chevron-down text-gray-500"></i>
+                        </div>
+                        <div class="answer-section">${q.answer.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+                listElement.innerHTML += card;
+            });
+        }
+
+        function toggleAnswer(card) {
+            const answer = card.querySelector('.answer-section');
+            const icon = card.querySelector('i');
+            answer.style.display = answer.style.display === 'block' ? 'none' : 'block';
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        }
+
+        function initializeCharts() {
+            const allTopics = [...new Set(questionData.map(q => q.topic))];
+
+            // Topic Frequency (Bar)
+            const topicCtx = document.getElementById('topicFrequencyChart').getContext('2d');
+            topicChart = new Chart(topicCtx, {
+                type: 'bar',
+                data: { labels: allTopics, datasets: [{ label: 'Question Count', data: [], backgroundColor: chartColors.secondary, hoverBackgroundColor: chartColors.primary, borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+            });
+
+            // Marks Distribution (Doughnut)
+            const marksCtx = document.getElementById('marksDistributionChart').getContext('2d');
+            marksChart = new Chart(marksCtx, {
+                type: 'doughnut',
+                data: { labels: allTopics, datasets: [{ label: 'Total Marks', data: [], backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.light], hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // Average Marks (Line)
+            const avgCtx = document.getElementById('averageMarksChart').getContext('2d');
+            averageMarksChart = new Chart(avgCtx, {
+                type: 'line',
+                data: { labels: allTopics, datasets: [{ label: 'Avg Marks', data: [], borderColor: chartColors.accent, backgroundColor: 'rgba(249, 148, 23, 0.2)', tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function updateCharts(data) {
+            const allTopics = [...new Set(questionData.map(q => q.topic))];
+            const topicCounts = allTopics.map(topic => data.filter(q => q.topic === topic).length);
+            const topicMarks = allTopics.map(topic => data.filter(q => q.topic === topic).reduce((sum, q) => sum + q.marks, 0));
+            const topicAverages = allTopics.map(topic => {
+                const qs = data.filter(q => q.topic === topic);
+                return qs.length ? (topicMarks[allTopics.indexOf(topic)] / qs.length).toFixed(1) : 0;
+            });
+
+            topicChart.data.datasets[0].data = topicCounts;
+            topicChart.update();
+            marksChart.data.datasets[0].data = topicMarks;
+            marksChart.update();
+            averageMarksChart.data.datasets[0].data = topicAverages;
+            averageMarksChart.update();
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('Discrete Mathematics Exam Analyzer', 10, 10);
+            const filteredQuestions = filterAndSortData();
+            let y = 20;
+            filteredQuestions.forEach(q => {
+                doc.setFontSize(12);
+                doc.text(`${q.id}: ${q.text} (${q.marks} Marks)`, 10, y);
+                y += 10;
+                doc.setFontSize(10);
+                doc.text(`Answer: ${q.answer}`, 10, y);
+                y += 15;
+            });
+            doc.save('exam_analyzer.pdf');
+        }
+    </script>
+</body>
+</html>
